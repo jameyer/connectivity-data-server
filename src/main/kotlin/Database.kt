@@ -81,12 +81,12 @@ class Database {
         try {
             googleDirectionsApiKey = File(GOOGLE_DIRECTIONS_API_KEY_FILE).readLines().firstOrNull()
             if (googleDirectionsApiKey == null) {
-                logger.warn("Could not read Google Directions API Key.")
+                logger.warn("Could not read Google Directions API Key (read null).")
             } else {
                 logger.info("Read Google Directions API Key: $googleDirectionsApiKey")
             }
         } catch (ex: FileNotFoundException) {
-            logger.warn("Could not read Google Directions API Key.")
+            logger.warn("Could not read Google Directions API Key (file $GOOGLE_DIRECTIONS_API_KEY_FILE does not exist).")
         }
 
         HikariDataSource(hikariConfig).apply {
