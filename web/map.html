@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Map</title>
+    <style>
+        /* Always set the map height explicitly to define the size of the div
+         * element that contains the map. */
+        #map {
+            height: 100%;
+        }
+
+        /* Optional: Makes the sample page fill the window. */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+
+    <script src="/web/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div id="map"></div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA5_C45tPGDU940ksSM9DUoBQyXvZR5hkg"></script>
+<script>
+    var map;
+
+    $(document).ready(function () {
+       map = new google.maps.Map(document.getElementById('map'), {
+            mapTypeId: 'terrain',
+            disableDoubleClickZoom: true,
+            center: {lat: 0, lng: 0},
+            zoom: 15
+        });
+
+        // extract argument from url if present
+        var url = window.location.href;
+        var mapEndIndex = url.indexOf("map") + "map".length;
+
+        if (url.length > mapEndIndex + 1) {
+            if (url.charAt(mapEndIndex) === '?') {
+                var args = url.substring(mapEndIndex);
+                console.log("args: " + args);
+
+                $.getJSON("/areas" + args, function (data) {
+                    initMap(data, args);
+                });
+
+
+                return;
+            }
+        }
+
+        $.getJSON('/areas', function (data) {
+            initMap(data, null)
+        });
+    });
+
+    function getColor(value) {
+        // value from 0 to 1
+        var hue = ((1 - value) * 120).toString(10);
+        return ["hsl(", hue, ", 100%, 50%)"].join("");
+    }
+
+    // format/type needed for the google.maps.Circle object
+    function circleCenter(latitude, longitude) {
+        return {lat: latitude, lng: longitude};
+    }
+
+    function initMap(data, args) {
+        var useNeutralColor = args.includes("neutral"); // e.g. color=neutral
+        var firstArea = data.areas[0];
+        var firstLatitude = parseFloat(firstArea.lat);
+        var firstLongitude = parseFloat(firstArea.lng);
+        var firstCenter = circleCenter(firstLatitude, firstLongitude);
+        var zoom = 14;
+
+        var latStr = localStorage['lastLat'];
+        // if (latStr != null && args == null) {
+        //     var lastLat = parseFloat(latStr);
+        //     var lastLon = parseFloat(localStorage['lastLon']);
+        //     zoom = parseInt(localStorage['lastZoom']);
+        //     firstCenter = circleCenter(lastLat, lastLon);
+        // }
+
+        map.setCenter(firstCenter);
+        map.setZoom(zoom);
+        map.addListener('center_changed', function() {
+            var center = map.getCenter();
+            localStorage['lastLat'] = center.lat();
+            localStorage['lastLon'] = center.lng();
+            localStorage['lastZoom'] = map.getZoom();
+        });
+
+        for (var i = 0; i < data.areas.length; i++) {
+            var area = data.areas[i];
+            var latitude = parseFloat(area.lat);
+            var longitude = parseFloat(area.lng);
+            var center = circleCenter(latitude, longitude);
+            var color = useNeutralColor ? "#00bfff" : getColor(1 - area.perf);
+            var circle = new google.maps.Circle({
+                strokeColor: '#000',
+                strokeOpacity: 0.8,
+                strokeWeight: 0.5,
+                fillColor: color,
+                fillOpacity: useNeutralColor ? 1.0 : 0.8,
+                map: map,
+                center: center,
+                radius: 50,
+                data: area
+            });
+
+            google.maps.event.addListener(circle, 'click', (function (circle, area) {
+                return function () {
+                    console.log(area);
+                };
+            })(circle, area));
+
+            google.maps.event.addListener(circle, 'dblclick', (function (circle, area) {
+                return function () {
+                    var infowindow = new google.maps.InfoWindow({
+                        content: area.lat + "," + area.lng
+                    });
+
+                    infowindow.setPosition(circle.center);
+                    infowindow.open(map, circle);
+                };
+            })(circle, area));
+        }
+    }
+</script>
+</body>
+</html>

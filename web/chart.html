@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chart</title>
+    <style>
+        #chart {
+            width: 800px;
+            height: 450px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .tick {
+            font-size: 16px;
+        }
+
+        .c3-axis-y-label, .c3-axis-x-label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .custom-grid-x {
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+
+    <link href="/web/c3.min.css" rel="stylesheet">
+    <script src="/web/jquery-3.3.1.min.js"></script>
+    <script src="/web/d3.v5.min.js"></script>
+    <script src="/web/c3.min.js"></script>
+
+</head>
+<body>
+<div id="chart"></div>
+<script>
+    $(document).ready(function () {
+        // extract args from url if present
+        var url = window.location.href;
+        var mapEndIndex = url.indexOf("chart") + "chart".length;
+
+        if (url.length > mapEndIndex + 1) {
+            if (url.charAt(mapEndIndex) === '?') {
+                var args = url.substring(mapEndIndex);
+                console.log("args: " + args);
+
+                $.getJSON("/chartData" + args, function (json) {
+                    document.title = json['title'];
+
+                    initChart(json);
+                });
+            }
+        }
+    });
+
+    function initChart(json) {
+        var tempLines = undefined;
+        if (json['mean'] != null && json['median'] != null) {
+            tempLines = [
+                {value: json['mean'], text: 'Mean', class: 'custom-grid-x'},
+                {value: json['median'], text: 'Median', class: 'custom-grid-x'}
+            ]
+        }
+
+        var chart = c3.generate({
+            bindto: '#chart',
+            padding: {
+                bottom: 40
+            },
+            data: {
+                x: 'x',
+                columns: [
+                    json['x'],
+                    json['y']
+                ],
+                type: json['type'],
+                colors: {
+                    'y': '#ff6152'
+                }
+            },
+            axis: {
+                x: {
+                    label: {
+                        text: json['xLabel'],
+                        position: 'outer-center'
+                    }
+
+                },
+                y: {
+                    label: {
+                        text: json['yLabel'],
+                        //position: 'outer-middle'
+                    }
+                }
+            },
+            zoom: {
+                enabled: true
+            },
+            legend: {
+                show: false
+            },
+            tooltip: {
+                format: {
+                    title: function (d) { return 'x = ' + d; },
+                    value: function (value, ratio, id, index) {
+                        return value + ' (' + json['c'][index] + ')'
+                    }
+                }
+            },
+            grid: {
+                x: {
+                    lines: tempLines
+                },
+                y: {
+                    show: true
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="connectivity-data-shared">
+    <output-path>$PROJECT_DIR$/out/artifacts/connectivity-data-shared</output-path>
+    <root id="archive" name="connectivity-data-shared.jar">
+      <element id="module-output" name="connectivity-data-shared" />
+    </root>
+  </artifact>
+</component>
