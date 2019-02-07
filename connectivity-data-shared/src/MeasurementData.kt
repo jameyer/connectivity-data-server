@@ -1,3 +1,5 @@
+package no.ntnu.jameyer.connectivitydatashared
+
 // Used by client application(s) to send data in correct format to server.
 data class MeasurementData(var packetId: Int,
                            var latitude: Double,
