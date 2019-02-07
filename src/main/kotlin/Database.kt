@@ -55,6 +55,9 @@ class Database {
         /** The UDP send interval that the measurement client uses in milliseconds. */
         private const val MEASUREMENT_UDP_SEND_INTERVAL_MS = 250
 
+        /** File which contains API key for Google Directions API. Make sure file is either added to
+         * .gitignore or that use of the key is restricted.
+         */
         private const val GOOGLE_DIRECTIONS_API_KEY_FILE = "google-directions-api-key.txt"
     }
 
