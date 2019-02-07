@@ -733,8 +733,8 @@ class Database {
             }
 
             // val areaIdWhere = if (areaId != null) "${Measurements.areaId.name} = $areaId" else null
-            val xMinWhere = if (xMin != null) "${column.name} >= $xMin" else null
-            val xMaxWhere = if (xMax != null) "${column.name} <= $xMax" else null
+            //val xMinWhere = if (xMin != null) "${column.name} >= $xMin" else null
+            //val xMaxWhere = if (xMax != null) "${column.name} <= $xMax" else null
             val having = if (cMin != null) "HAVING COUNT(*) > $cMin" else ""
 
             // Build the text (trip_id = tripIds[0] OR trip_id = tripIds[1] .. OR trip_id = tripIds[n])
@@ -747,7 +747,7 @@ class Database {
             }
 
             // Combine all "wheres"
-            val whereConcat = listOf(tripIdWhere, networkTypeWhere, xMinWhere, xMaxWhere).reduce { acc, s ->
+            val whereConcat = listOf(tripIdWhere, networkTypeWhere).reduce { acc, s ->
                 if (s == null) {
                     acc
                 } else {
@@ -783,6 +783,10 @@ class Database {
                     val yVal = it.getDouble(1)
                     if (it.wasNull()) continue
 
+                    // Ignore values larger than xMax or less than xMin
+                    if (xMax != null && xVal > xMax) continue
+                    if (xMin != null && xVal < xMin) continue
+
                     xData.add(xVal)
                     yData.add(yVal)
                 }
@@ -794,7 +798,7 @@ class Database {
             add("x", xData)
             add("y", yData)
             addProperty("xLabel", formatMetricName(metric))
-            addProperty("yLabel", "count")
+            addProperty("yLabel", "Occurences")
             addProperty("type", "bar")
             addProperty("mean", mean)
             addProperty("median", median)
@@ -804,7 +808,7 @@ class Database {
     }
 
     /** TODO: Shares a lot of code with [chartDistribution], refactor. */
-    fun chartXy(type: String, areaId: Int?, tripIds: List<Int>?, networkType: String?, x: String, y: String, xMin: Int?, xMax: Int?, cMin: Int?): String {
+    fun chartXy(type: String, areaId: Int?, tripIds: List<Int>?, networkType: String?, x: String, y: String, xMin: Int?, xMax: Int?): String {
         val xColumn = columnFromString(x) ?: return ""
         val yColumn = columnFromString(y) ?: return ""
         val xData = JsonArray().apply { add("x") }
@@ -816,9 +820,6 @@ class Database {
 
             val networkTypeWhere = if (networkType != null) "${Measurements.networkType.name} = '$networkType'" else null
             val areaIdWhere = if (areaId != null) "${Measurements.areaId.name} = $areaId" else null
-            val xMinWhere = if (xMin != null) "${xColumn.name} >= $xMin" else null
-            val xMaxWhere = if (xMax != null) "${xColumn.name} <= $xMax" else null
-            val having = if (cMin != null) "HAVING COUNT(*) > $cMin" else ""
 
             // Build the text (trip_id = tripIds[0] OR trip_id = tripIds[1] .. OR trip_id = tripIds[n])
             val tripIdWhere = if (tripIds != null) {
@@ -830,7 +831,7 @@ class Database {
             }
 
             // Combine all "wheres"
-            val whereConcat = listOf(tripIdWhere, networkTypeWhere, areaIdWhere, xMinWhere, xMaxWhere).reduce { acc, s ->
+            val whereConcat = listOf(tripIdWhere, networkTypeWhere, areaIdWhere).reduce { acc, s ->
                 if (s == null) {
                     acc
                 } else {
@@ -843,11 +844,11 @@ class Database {
             val sql =
                     if (type == "median") {
                         "SELECT COUNT(*) AS C, ${xColumn.name}, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${yColumn.name}) " +
-                                "FROM Measurements $where GROUP BY ${xColumn.name} " + having + " ORDER BY ${xColumn.name}"
+                                "FROM Measurements $where GROUP BY ${xColumn.name} " + " ORDER BY ${xColumn.name}"
                     } else {
                         // average
                         "SELECT COUNT(*) AS C, ${xColumn.name}, AVG(${yColumn.name}) " +
-                                "FROM Measurements $where GROUP BY ${xColumn.name} " + having + " ORDER BY ${xColumn.name}"
+                                "FROM Measurements $where GROUP BY ${xColumn.name} " + " ORDER BY ${xColumn.name}"
                     }
 
             exec (sql) {
@@ -857,6 +858,10 @@ class Database {
                     val yVal = it.getDouble(3)
                     if (it.wasNull()) continue
                     val count = it.getInt(1)
+
+                    // Ignore values larger than xMax or less than xMin
+                    if (xMax != null && xVal > xMax) continue
+                    if (xMin != null && xVal < xMin) continue
 
                     xData.add(xVal)
                     yData.add(yVal)

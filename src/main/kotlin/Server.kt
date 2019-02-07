@@ -116,9 +116,8 @@ class Server {
                                 val networkType = call.request.queryParameters["networkType"]
                                 val x = call.request.queryParameters["x"] ?: return@get
                                 val y = call.request.queryParameters["y"] ?: return@get
-                                val cMin = call.request.queryParameters["cMin"]?.toInt()
 
-                                call.respondText(database.chartXy(type, areaId, tripIds, networkType, x, y, xMin, xMax, cMin), ContentType.Application.Json)
+                                call.respondText(database.chartXy(type, areaId, tripIds, networkType, x, y, xMin, xMax), ContentType.Application.Json)
                             }
                         }
                     }
